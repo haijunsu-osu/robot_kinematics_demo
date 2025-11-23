@@ -1,0 +1,26 @@
+.resizer {
+    position: relative;
+    background-color: transparent;
+    z-index: 10;
+    transition: background-color 0.2s;
+}
+
+.resizer:hover {
+    background-color: var(--accent-primary);
+}
+
+.resizer.vertical {
+    width: 4px;
+    cursor: col-resize;
+    flex-shrink: 0;
+}
+
+.resizer.horizontal {
+    height: 4px;
+    cursor: row-resize;
+    flex-shrink: 0;
+}
+
+.resizer:active {
+    background-color: var(--accent-primary);
+}

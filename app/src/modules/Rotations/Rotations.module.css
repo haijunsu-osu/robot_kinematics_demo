@@ -7,10 +7,11 @@
 .scene {
     flex: 1;
     position: relative;
+    min-width: 300px;
 }
 
 .controls {
-    width: 350px;
+    flex-shrink: 0;
     background-color: var(--bg-panel);
     backdrop-filter: blur(10px);
     border-left: 1px solid var(--border-color);
