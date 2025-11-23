@@ -4,7 +4,7 @@ import type { DHRow } from '../../utils/robotics';
 import { Matrix4 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import styles from '../Rotations/RotationsControls.module.css';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Copy, ClipboardPaste } from 'lucide-react';
 
 interface RobotControlsProps {
     rows: DHRow[];
@@ -24,6 +24,76 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
 
     const updateRow = (id: string, field: keyof DHRow, value: number) => {
         setRows(rows.map(r => r.id === id ? { ...r, [field]: value } : r));
+    };
+
+    const copyDHTable = async () => {
+        // Format: each row as "a alpha d theta" separated by newlines
+        const text = rows.map(r => `${r.a}\t${r.alpha}\t${r.d}\t${r.theta}`).join('\n');
+        try {
+            await navigator.clipboard.writeText(text);
+            alert('DH parameters copied to clipboard!');
+        } catch (err) {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        }
+    };
+
+    const pasteDHTable = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            const lines = text.trim().split('\n');
+            const newRows: DHRow[] = [];
+
+            for (const line of lines) {
+                // Support tab, comma, space, or semicolon delimiters
+                const values = line.split(/[\t,;\s]+/).map(v => parseFloat(v.trim()));
+                if (values.length >= 4 && values.every(v => !isNaN(v))) {
+                    newRows.push({
+                        id: uuidv4(),
+                        a: values[0],
+                        alpha: values[1],
+                        d: values[2],
+                        theta: values[3]
+                    });
+                }
+            }
+
+            if (newRows.length > 0) {
+                setRows(newRows);
+                alert(`Pasted ${newRows.length} DH parameter rows!`);
+            } else {
+                alert('No valid DH parameters found in clipboard. Expected format: a alpha d theta (one row per line)');
+            }
+        } catch (err) {
+            console.error('Failed to paste:', err);
+            alert('Failed to read from clipboard');
+        }
+    };
+
+    const copyEndEffectorPose = () => {
+        let current = new Matrix4();
+        rows.forEach(row => {
+            const transform = calculateDHMatrix(row.a, row.alpha, row.d, row.theta);
+            current = current.multiply(transform);
+        });
+
+        // Format as row-major 4x4 matrix
+        const elements = current.elements;
+        const matrix4x4 = [
+            [elements[0], elements[4], elements[8], elements[12]],
+            [elements[1], elements[5], elements[9], elements[13]],
+            [elements[2], elements[6], elements[10], elements[14]],
+            [elements[3], elements[7], elements[11], elements[15]]
+        ];
+
+        const text = matrix4x4.map(row => row.map(v => v.toFixed(6)).join('\t')).join('\n');
+
+        navigator.clipboard.writeText(text).then(() => {
+            alert('End-effector pose matrix copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('Failed to copy to clipboard');
+        });
     };
 
     return (
@@ -100,6 +170,14 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                 <button onClick={addRow} style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Plus size={16} /> Add Link
                 </button>
+                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
+                    <button onClick={copyDHTable} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                        <Copy size={14} /> Copy Table
+                    </button>
+                    <button onClick={pasteDHTable} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                        <ClipboardPaste size={14} /> Paste Table
+                    </button>
+                </div>
             </section>
 
             <section>
