@@ -1,12 +1,3 @@
-# Kinematics Visualizer
-
-A professional, educational web application for visualizing robot kinematics concepts. This tool is designed to help students and engineers understand 3D rotations, transformations, compositions, and robot kinematics through interactive 3D visualizations and dynamic mathematical inputs.
-
-## Features
-
-### 1. 3D Rotations
-*   **Interactive Visualization**: Visualize a coordinate frame rotating in 3D space.
-*   **Multiple Input Methods**:
     *   **Euler Angles**: Adjust X, Y, Z rotation angles via sliders.
     *   **Axis-Angle**: Specify a rotation axis vector and an angle.
     *   **Rotation Matrix**: Directly input values into a 3x3 rotation matrix.
