@@ -55,6 +55,8 @@ export const CoordinateFrame: React.FC<FrameProps> = ({
         const m = new Matrix4();
         if (matrix) {
             m.copy(matrix);
+            // Apply visual scale to the matrix
+            m.scale(new Vector3(scale, scale, scale));
         } else {
             m.compose(
                 new Vector3(...position),

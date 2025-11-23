@@ -84,20 +84,23 @@ export const getMatrixFromScrewParameters = (params: ScrewParameters): Matrix4 =
     const { theta, d, s, c } = params;
     const normS = s.clone().normalize();
 
-    // Rotation R = exp([s]theta)
+    // Rotation R = exp([s]theta) = I + sin(theta)[s] + (1-cos(theta))[s]^2
+    // Matrix4.makeRotationAxis does this internally.
     const R = new Matrix4().makeRotationAxis(normS, theta);
 
-    // Translation p = (I - R)C + d*s
-    const I = new Matrix4(); // Identity
-    // (I - R)
-    const I_minus_R = new Matrix4();
-    for (let i = 0; i < 16; i++) I_minus_R.elements[i] = I.elements[i] - R.elements[i];
-    // We need to be careful with Matrix4 operations which are 4x4. 
-    // Easier to do vector math: p = C - R*C + d*s
+    // Translation p = (I - R)c + d*s
+    // p = c - Rc + d*s
 
-    const RC = c.clone().applyMatrix4(R);
-    const p = c.clone().sub(RC).add(normS.clone().multiplyScalar(d));
+    // Calculate Rc
+    // Note: applyMatrix4 applies the full 4x4 transform including translation if present.
+    // But R here is a pure rotation matrix (position is 0,0,0).
+    // So applyMatrix4(R) on a vector is equivalent to R * v.
+    const Rc = c.clone().applyMatrix4(R);
 
+    // p = c - Rc + d*s
+    const p = c.clone().sub(Rc).add(normS.clone().multiplyScalar(d));
+
+    // Construct final T
     const T = R.clone();
     T.setPosition(p);
 

@@ -1,6 +1,8 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Grid, PerspectiveCamera, GizmoHelper, GizmoViewcube } from '@react-three/drei';
+import { CoordinateFrame } from './CoordinateFrame';
+import { Matrix4 } from 'three';
 
 interface SceneProps {
     children: React.ReactNode;
@@ -25,7 +27,8 @@ export const Scene: React.FC<SceneProps> = ({ children }) => {
                 fadeDistance={20}
             />
 
-            <axesHelper args={[1]} /> {/* World Frame */}
+            {/* World Frame */}
+            <CoordinateFrame matrix={new Matrix4()} scale={1} label="World" />
 
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
                 <GizmoViewcube />

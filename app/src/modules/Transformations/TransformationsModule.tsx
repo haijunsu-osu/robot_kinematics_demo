@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Matrix4, Quaternion, Vector3 } from 'three';
+import { Matrix4, Vector3 } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
 import { TransformationsControls } from './TransformationsControls';
@@ -10,25 +10,32 @@ interface TransformationsModuleProps {
     setMatrix: (m: Matrix4) => void;
 }
 
+import { getScrewParametersFromMatrix } from '../../utils/robotics';
+
 const TransformationVisualizer: React.FC<{ matrix: Matrix4 }> = ({ matrix }) => {
-    const { axis, angle, position } = useMemo(() => {
-        const q = new Quaternion().setFromRotationMatrix(matrix);
-        const w = Math.min(Math.max(q.w, -1), 1);
-        const angle = 2 * Math.acos(w);
-        const s = Math.sqrt(1 - w * w);
-        const axis = s < 0.001 ? new Vector3(0, 0, 1) : new Vector3(q.x, q.y, q.z).divideScalar(s);
+    const { screw, position } = useMemo(() => {
+        const screw = getScrewParametersFromMatrix(matrix);
         const position = new Vector3().setFromMatrixPosition(matrix);
-        return { axis, angle, position };
+        return { screw, position };
     }, [matrix]);
 
     return (
         <group>
-            {/* Rotation Axis (Yellow) at Origin */}
-            {angle > 0.001 && (
-                <arrowHelper args={[axis, new Vector3(0, 0, 0), 2, 0xffff00]} />
+            {/* Screw Axis (Yellow) at Point C */}
+            {screw.s.lengthSq() > 0.001 && (
+                <group>
+                    {/* Show axis line passing through C. We draw a long line. */}
+                    <arrowHelper args={[screw.s, screw.c, 3, 0xffff00]} />
+                    <arrowHelper args={[screw.s.clone().negate(), screw.c, 3, 0xffff00]} />
+                    {/* Show Point C */}
+                    <mesh position={screw.c}>
+                        <sphereGeometry args={[0.05]} />
+                        <meshBasicMaterial color="yellow" />
+                    </mesh>
+                </group>
             )}
 
-            {/* Translation Vector (Cyan) from Origin to Position */}
+            {/* Translation Vector (Cyan) from Origin to Position (optional, but good for context) */}
             {position.length() > 0.001 && (
                 <arrowHelper args={[position.clone().normalize(), new Vector3(0, 0, 0), position.length(), 0x00ffff]} />
             )}

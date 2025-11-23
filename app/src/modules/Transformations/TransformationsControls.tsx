@@ -108,25 +108,25 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
 
                 <h4>Screw Axis Direction (s)</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                    <input type="number" step="0.1" value={screw.s.x.toFixed(2)} onChange={(e) => handleScrewChange('sx', parseFloat(e.target.value))} placeholder="x" />
-                    <input type="number" step="0.1" value={screw.s.y.toFixed(2)} onChange={(e) => handleScrewChange('sy', parseFloat(e.target.value))} placeholder="y" />
-                    <input type="number" step="0.1" value={screw.s.z.toFixed(2)} onChange={(e) => handleScrewChange('sz', parseFloat(e.target.value))} placeholder="z" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.x.toFixed(2)} onChange={(e) => handleScrewChange('sx', parseFloat(e.target.value))} placeholder="x" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.y.toFixed(2)} onChange={(e) => handleScrewChange('sy', parseFloat(e.target.value))} placeholder="y" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.z.toFixed(2)} onChange={(e) => handleScrewChange('sz', parseFloat(e.target.value))} placeholder="z" />
                 </div>
 
                 <h4>Point on Axis (C)</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                    <input type="number" step="0.1" value={screw.c.x.toFixed(2)} onChange={(e) => handleScrewChange('cx', parseFloat(e.target.value))} placeholder="x" />
-                    <input type="number" step="0.1" value={screw.c.y.toFixed(2)} onChange={(e) => handleScrewChange('cy', parseFloat(e.target.value))} placeholder="y" />
-                    <input type="number" step="0.1" value={screw.c.z.toFixed(2)} onChange={(e) => handleScrewChange('cz', parseFloat(e.target.value))} placeholder="z" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.x.toFixed(2)} onChange={(e) => handleScrewChange('cx', parseFloat(e.target.value))} placeholder="x" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.y.toFixed(2)} onChange={(e) => handleScrewChange('cy', parseFloat(e.target.value))} placeholder="y" />
+                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.z.toFixed(2)} onChange={(e) => handleScrewChange('cz', parseFloat(e.target.value))} placeholder="z" />
                 </div>
             </section>
 
             <section>
-                <h3>Matrix</h3>
-                <div className={styles.matrixGrid}>
-                    {matrix.elements.map((val, idx) => (
-                        <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none' }}>
-                            {val.toFixed(2)}
+                <h3>Matrix (4x4)</h3>
+                <div className={styles.matrixGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                    {[0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
+                        <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
+                            {matrix.elements[idx].toFixed(2)}
                         </div>
                     ))}
                 </div>
