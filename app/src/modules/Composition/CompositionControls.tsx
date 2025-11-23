@@ -150,9 +150,9 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
                     <section>
                         <h3>Final Transformation Matrix</h3>
                         <div className={styles.matrixGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                            {finalMatrix.elements.map((val, idx) => (
+                            {[0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
                                 <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none' }}>
-                                    {val.toFixed(3)}
+                                    {finalMatrix.elements[idx].toFixed(3)}
                                 </div>
                             ))}
                         </div>
