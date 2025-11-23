@@ -1,0 +1,33 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.matrixInput {
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.val {
+    flex: 1;
+    font-family: monospace;
+    color: var(--text-primary);
+}
