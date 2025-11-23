@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Matrix4, Vector3 } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
+import { Resizer } from '../../components/Resizer';
 import { RobotControls } from './RobotControls';
 import { calculateDHMatrix } from '../../utils/robotics';
 import type { DHRow } from '../../utils/robotics';
@@ -16,6 +17,8 @@ interface RobotModuleProps {
 }
 
 export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLength, setAxisLength }) => {
+    const [controlsWidth, setControlsWidth] = useState(350);
+
     const frames = useMemo(() => {
         const f: Matrix4[] = [];
         let current = new Matrix4();
@@ -32,6 +35,10 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
     const points = useMemo(() => {
         return frames.map(m => new Vector3().setFromMatrixPosition(m));
     }, [frames]);
+
+    const handleControlsResize = (deltaX: number) => {
+        setControlsWidth(prev => Math.max(250, Math.min(600, prev - deltaX)));
+    };
 
     return (
         <div className={styles.container}>
@@ -55,7 +62,8 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
                     />
                 </Scene>
             </div>
-            <div className={styles.controls}>
+            <Resizer onResize={handleControlsResize} />
+            <div className={styles.controls} style={{ width: `${controlsWidth}px` }}>
                 <RobotControls
                     rows={rows}
                     setRows={setRows}

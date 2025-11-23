@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Matrix4 } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
+import { Resizer } from '../../components/Resizer';
 import { CompositionControls } from './CompositionControls';
 import styles from '../Rotations/Rotations.module.css';
 
@@ -20,6 +21,8 @@ interface CompositionModuleProps {
 }
 
 export const CompositionModule: React.FC<CompositionModuleProps> = ({ steps, setSteps, mode, setMode }) => {
+    const [controlsWidth, setControlsWidth] = useState(350);
+
     // Calculate final matrix
     const finalMatrix = useMemo(() => {
         const result = new Matrix4(); // Identity
@@ -61,6 +64,10 @@ export const CompositionModule: React.FC<CompositionModuleProps> = ({ steps, set
         return frames;
     }, [steps, mode]);
 
+    const handleControlsResize = (deltaX: number) => {
+        setControlsWidth(prev => Math.max(250, Math.min(600, prev - deltaX)));
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.scene}>
@@ -76,7 +83,8 @@ export const CompositionModule: React.FC<CompositionModuleProps> = ({ steps, set
                     ))}
                 </Scene>
             </div>
-            <div className={styles.controls}>
+            <Resizer onResize={handleControlsResize} />
+            <div className={styles.controls} style={{ width: `${controlsWidth}px` }}>
                 <CompositionControls
                     steps={steps}
                     setSteps={setSteps}
