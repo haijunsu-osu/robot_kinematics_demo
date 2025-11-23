@@ -28,10 +28,15 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
 
     const copyDHTable = async () => {
         // Format: each row as "a alpha d theta" separated by newlines
-        const text = rows.map(r => `${r.a}\t${r.alpha}\t${r.d}\t${r.theta}`).join('\n');
+        // Convert alpha and theta to degrees for clipboard
+        const text = rows.map(r => {
+            const alphaDeg = r.alpha * 180 / Math.PI;
+            const thetaDeg = r.theta * 180 / Math.PI;
+            return `${r.a}\t${alphaDeg.toFixed(2)}\t${r.d}\t${thetaDeg.toFixed(2)}`;
+        }).join('\n');
         try {
             await navigator.clipboard.writeText(text);
-            alert('DH parameters copied to clipboard!');
+            alert('DH parameters (degrees) copied to clipboard!');
         } catch (err) {
             console.error('Failed to copy:', err);
             alert('Failed to copy to clipboard');
@@ -51,18 +56,18 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                     newRows.push({
                         id: uuidv4(),
                         a: values[0],
-                        alpha: values[1],
+                        alpha: values[1] * Math.PI / 180, // Convert deg to rad
                         d: values[2],
-                        theta: values[3]
+                        theta: values[3] * Math.PI / 180  // Convert deg to rad
                     });
                 }
             }
 
             if (newRows.length > 0) {
                 setRows(newRows);
-                alert(`Pasted ${newRows.length} DH parameter rows!`);
+                alert(`Pasted ${newRows.length} DH parameter rows (assumed degrees)!`);
             } else {
-                alert('No valid DH parameters found in clipboard. Expected format: a alpha d theta (one row per line)');
+                alert('No valid DH parameters found. Expected: a alpha(deg) d theta(deg)');
             }
         } catch (err) {
             console.error('Failed to paste:', err);
@@ -121,7 +126,7 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                             <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
                                 <th style={{ padding: '0.5rem' }}>Link</th>
                                 <th style={{ padding: '0.5rem' }}>a</th>
-                                <th style={{ padding: '0.5rem' }}>α (rad)</th>
+                                <th style={{ padding: '0.5rem' }}>α (deg)</th>
                                 <th style={{ padding: '0.5rem' }}>d</th>
                                 <th></th>
                             </tr>
@@ -142,9 +147,9 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                     <td style={{ padding: '0.25rem' }}>
                                         <input
                                             type="number"
-                                            step="0.1"
-                                            value={row.alpha}
-                                            onChange={(e) => updateRow(row.id, 'alpha', parseFloat(e.target.value))}
+                                            step="1"
+                                            value={(row.alpha * 180 / Math.PI).toFixed(1)}
+                                            onChange={(e) => updateRow(row.id, 'alpha', parseFloat(e.target.value) * Math.PI / 180)}
                                             style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
@@ -209,14 +214,17 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                             const transform = calculateDHMatrix(row.a, row.alpha, row.d, row.theta);
                             current = current.multiply(transform);
                         });
-                        // Display in row-major order
-                        return [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
+                        // Display in row-major order (3x4)
+                        return [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14].map((idx) => (
                             <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
                                 {current.elements[idx].toFixed(2)}
                             </div>
                         ));
                     })()}
                 </div>
+                <button onClick={copyEndEffectorPose} style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
+                    <Copy size={14} /> Copy Pose Matrix
+                </button>
             </section>
         </div>
     );

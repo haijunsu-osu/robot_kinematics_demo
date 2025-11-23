@@ -126,18 +126,18 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
             </section>
 
             <section>
-                <h3>Rotation (Euler)</h3>
+                <h3>Rotation (Euler Deg)</h3>
                 <div className={styles.sliderGroup}>
-                    <label>X: {euler.x.toFixed(2)}</label>
-                    <input type="range" min={-Math.PI} max={Math.PI} step={0.01} value={euler.x} onChange={(e) => handleEulerChange('x', parseFloat(e.target.value))} />
+                    <label>X: {MathUtils.radToDeg(euler.x).toFixed(1)}°</label>
+                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.x)} onChange={(e) => handleEulerChange('x', MathUtils.degToRad(parseFloat(e.target.value)))} />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Y: {euler.y.toFixed(2)}</label>
-                    <input type="range" min={-Math.PI} max={Math.PI} step={0.01} value={euler.y} onChange={(e) => handleEulerChange('y', parseFloat(e.target.value))} />
+                    <label>Y: {MathUtils.radToDeg(euler.y).toFixed(1)}°</label>
+                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.y)} onChange={(e) => handleEulerChange('y', MathUtils.degToRad(parseFloat(e.target.value)))} />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Z: {euler.z.toFixed(2)}</label>
-                    <input type="range" min={-Math.PI} max={Math.PI} step={0.01} value={euler.z} onChange={(e) => handleEulerChange('z', parseFloat(e.target.value))} />
+                    <label>Z: {MathUtils.radToDeg(euler.z).toFixed(1)}°</label>
+                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.z)} onChange={(e) => handleEulerChange('z', MathUtils.degToRad(parseFloat(e.target.value)))} />
                 </div>
             </section>
 
@@ -169,7 +169,7 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
 
             <section>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
-                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Matrix (4x4)</h3>
+                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Matrix (3x4)</h3>
                     <button
                         className={styles.button}
                         style={{ width: 'auto', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
@@ -179,7 +179,7 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
                     </button>
                 </div>
                 <div className={styles.matrixGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                    {[0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
+                    {[0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14].map((idx) => (
                         <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
                             {matrix.elements[idx].toFixed(2)}
                         </div>
