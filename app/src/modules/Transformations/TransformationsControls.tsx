@@ -61,6 +61,52 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
         }
     };
 
+    const [inputText, setInputText] = useState("");
+    const [error, setError] = useState<string | null>(null);
+    const [copyFeedback, setCopyFeedback] = useState(false);
+
+    const handleCopyMatrix = () => {
+        const e = matrix.elements;
+        // Format: row-major, space separated cols, semicolon separated rows
+        const row1 = `${e[0].toFixed(4)} ${e[4].toFixed(4)} ${e[8].toFixed(4)} ${e[12].toFixed(4)}`;
+        const row2 = `${e[1].toFixed(4)} ${e[5].toFixed(4)} ${e[9].toFixed(4)} ${e[13].toFixed(4)}`;
+        const row3 = `${e[2].toFixed(4)} ${e[6].toFixed(4)} ${e[10].toFixed(4)} ${e[14].toFixed(4)}`;
+        const row4 = `${e[3].toFixed(4)} ${e[7].toFixed(4)} ${e[11].toFixed(4)} ${e[15].toFixed(4)}`;
+        const text = `${row1}; ${row2}; ${row3}; ${row4}`;
+
+        navigator.clipboard.writeText(text).then(() => {
+            setCopyFeedback(true);
+            setTimeout(() => setCopyFeedback(false), 2000);
+        });
+    };
+
+    const handleParseAndCompute = () => {
+        setError(null);
+        // Split by comma, space, tab, colon, newline, curly braces
+        const tokens = inputText.trim().split(/[\s,;:\t\n{}]+/).filter(t => t.length > 0);
+        const numbers = tokens.map(t => parseFloat(t));
+
+        if (numbers.some(isNaN)) {
+            setError("Invalid numbers detected");
+            return;
+        }
+
+        if (numbers.length !== 16) {
+            setError(`Expected 16 numbers, found ${numbers.length}`);
+            return;
+        }
+
+        const m = new Matrix4();
+        m.set(
+            numbers[0], numbers[1], numbers[2], numbers[3],
+            numbers[4], numbers[5], numbers[6], numbers[7],
+            numbers[8], numbers[9], numbers[10], numbers[11],
+            numbers[12], numbers[13], numbers[14], numbers[15]
+        );
+
+        onChange(m);
+    };
+
     return (
         <div className={styles.wrapper}>
             <section>
@@ -122,7 +168,16 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
             </section>
 
             <section>
-                <h3>Matrix (4x4)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Matrix (4x4)</h3>
+                    <button
+                        className={styles.button}
+                        style={{ width: 'auto', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                        onClick={handleCopyMatrix}
+                    >
+                        {copyFeedback ? "Copied!" : "Copy"}
+                    </button>
+                </div>
                 <div className={styles.matrixGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                     {[0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
                         <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
@@ -130,6 +185,20 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
                         </div>
                     ))}
                 </div>
+            </section>
+
+            <section>
+                <h3>Matrix Input</h3>
+                <textarea
+                    className={styles.textarea}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    placeholder="Paste 4x4 matrix here (space, comma, tab, colon, or {} separated)"
+                />
+                <button className={styles.button} onClick={handleParseAndCompute}>
+                    Parse & Update
+                </button>
+                {error && <div style={{ color: 'var(--error-color, #ff4444)', marginTop: '0.5rem', fontSize: '0.9rem' }}>{error}</div>}
             </section>
         </div>
     );
