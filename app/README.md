@@ -10,6 +10,8 @@ A professional, educational web application for visualizing robot kinematics con
     *   **Euler Angles**: Adjust X, Y, Z rotation angles via sliders.
     *   **Axis-Angle**: Specify a rotation axis vector and an angle.
     *   **Rotation Matrix**: Directly input values into a 3x3 rotation matrix.
+    *   **Matrix Copy/Paste**: Copy the current matrix in a standard format or paste matrices from other tools (supports space, comma, semicolon, and Mathematica-style `{}` delimiters).
+*   **Screw Theory Analysis**: Automatically computes and displays the screw axis, rotation angle, and displacement for any given rotation.
 *   **Real-time Updates**: All inputs are synchronized. Changing one updates the others and the 3D view instantly.
 *   **Quaternion Display**: View the corresponding quaternion for the current rotation.
 
@@ -20,6 +22,7 @@ A professional, educational web application for visualizing robot kinematics con
     *   Set screw parameters: Rotation angle ($\theta$) and translation along the axis ($d$).
     *   Visualize the screw axis (yellow line) and the resulting displacement.
 *   **Matrix Control**: View and edit the full 4x4 homogeneous transformation matrix.
+*   **Advanced Matrix Input**: Copy the 4x4 matrix or paste one to instantly update the visualization and extract screw parameters.
 
 ### 3. Composition
 *   **Chain Transformations**: Create a sequence of transformations.

@@ -1,6 +1,19 @@
+# Robot Kinematics Demo
+
+**Live Demo:** [https://haijunsu-osu.github.io/robot_kinematics_demo/](https://haijunsu-osu.github.io/robot_kinematics_demo/)
+
+This project is a professional, educational web application for visualizing robot kinematics concepts. This tool is designed to help students and engineers understand 3D rotations, transformations, compositions, and robot kinematics through interactive 3D visualizations and dynamic mathematical inputs.
+
+## Features
+
+### 1. 3D Rotations
+*   **Interactive Visualization**: Visualize a coordinate frame rotating in 3D space.
+*   **Multiple Input Methods**:
     *   **Euler Angles**: Adjust X, Y, Z rotation angles via sliders.
     *   **Axis-Angle**: Specify a rotation axis vector and an angle.
     *   **Rotation Matrix**: Directly input values into a 3x3 rotation matrix.
+    *   **Matrix Copy/Paste**: Copy the current matrix in a standard format or paste matrices from other tools (supports space, comma, semicolon, and Mathematica-style `{}` delimiters).
+*   **Screw Theory Analysis**: Automatically computes and displays the screw axis, rotation angle, and displacement for any given rotation.
 *   **Real-time Updates**: All inputs are synchronized. Changing one updates the others and the 3D view instantly.
 *   **Quaternion Display**: View the corresponding quaternion for the current rotation.
 
@@ -11,6 +24,7 @@
     *   Set screw parameters: Rotation angle ($\theta$) and translation along the axis ($d$).
     *   Visualize the screw axis (yellow line) and the resulting displacement.
 *   **Matrix Control**: View and edit the full 4x4 homogeneous transformation matrix.
+*   **Advanced Matrix Input**: Copy the 4x4 matrix or paste one to instantly update the visualization and extract screw parameters.
 
 ### 3. Composition
 *   **Chain Transformations**: Create a sequence of transformations.
