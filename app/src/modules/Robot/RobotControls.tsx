@@ -1,5 +1,7 @@
 import React from 'react';
+import { calculateDHMatrix } from '../../utils/robotics';
 import type { DHRow } from '../../utils/robotics';
+import { Matrix4 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import styles from '../Rotations/RotationsControls.module.css';
 import { Plus, Trash2 } from 'lucide-react';
@@ -51,7 +53,6 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                 <th style={{ padding: '0.5rem' }}>a</th>
                                 <th style={{ padding: '0.5rem' }}>α (rad)</th>
                                 <th style={{ padding: '0.5rem' }}>d</th>
-                                <th style={{ padding: '0.5rem' }}>θ (rad)</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -65,7 +66,7 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                             step="0.1"
                                             value={row.a}
                                             onChange={(e) => updateRow(row.id, 'a', parseFloat(e.target.value))}
-                                            style={{ width: '50px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
+                                            style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
                                     <td style={{ padding: '0.25rem' }}>
@@ -74,7 +75,7 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                             step="0.1"
                                             value={row.alpha}
                                             onChange={(e) => updateRow(row.id, 'alpha', parseFloat(e.target.value))}
-                                            style={{ width: '50px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
+                                            style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
                                     <td style={{ padding: '0.25rem' }}>
@@ -83,16 +84,7 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                             step="0.1"
                                             value={row.d}
                                             onChange={(e) => updateRow(row.id, 'd', parseFloat(e.target.value))}
-                                            style={{ width: '50px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
-                                        />
-                                    </td>
-                                    <td style={{ padding: '0.25rem' }}>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={row.theta}
-                                            onChange={(e) => updateRow(row.id, 'theta', parseFloat(e.target.value))}
-                                            style={{ width: '50px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
+                                            style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
                                     <td style={{ padding: '0.25rem' }}>
@@ -111,12 +103,42 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
             </section>
 
             <section>
+                <h3>Joint Angles (Degrees)</h3>
+                {rows.map((row, index) => (
+                    <div key={row.id} className={styles.sliderGroup}>
+                        <label>J{index + 1}: {(row.theta * 180 / Math.PI).toFixed(1)}°</label>
+                        <input
+                            type="range"
+                            min={-180}
+                            max={180}
+                            step={1}
+                            value={row.theta * 180 / Math.PI}
+                            onChange={(e) => updateRow(row.id, 'theta', parseFloat(e.target.value) * Math.PI / 180)}
+                        />
+                    </div>
+                ))}
+            </section>
+
+            <section>
                 <h3>Forward Kinematics</h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     End-Effector Pose (relative to Base):
                 </p>
-                {/* Display final matrix here? Or just rely on visual? */}
-                {/* For now, visual is good. */}
+                <div className={styles.matrixGrid} style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+                    {(() => {
+                        let current = new Matrix4();
+                        rows.forEach(row => {
+                            const transform = calculateDHMatrix(row.a, row.alpha, row.d, row.theta);
+                            current = current.multiply(transform);
+                        });
+                        // Display in row-major order
+                        return [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15].map((idx) => (
+                            <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
+                                {current.elements[idx].toFixed(2)}
+                            </div>
+                        ));
+                    })()}
+                </div>
             </section>
         </div>
     );
