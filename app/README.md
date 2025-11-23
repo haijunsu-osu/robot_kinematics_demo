@@ -1,4 +1,4 @@
-# Kinematics Visualizer
+# Robot Kinematics Demo
 
 A professional, educational web application for visualizing robot kinematics concepts. This tool is designed to help students and engineers understand 3D rotations, transformations, compositions, and robot kinematics through interactive 3D visualizations and dynamic mathematical inputs.
 
