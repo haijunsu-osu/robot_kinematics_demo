@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Matrix4, Vector3 } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
+import { Resizer } from '../../components/Resizer';
 import { TransformationsControls } from './TransformationsControls';
 import styles from '../Rotations/Rotations.module.css';
 
@@ -44,21 +45,26 @@ const TransformationVisualizer: React.FC<{ matrix: Matrix4 }> = ({ matrix }) => 
 };
 
 export const TransformationsModule: React.FC<TransformationsModuleProps> = ({ matrix, setMatrix }) => {
+    const [controlsWidth, setControlsWidth] = useState(350);
+
     const handleMatrixChange = (newMatrix: Matrix4) => {
         setMatrix(newMatrix.clone());
+    };
+
+    const handleControlsResize = (deltaX: number) => {
+        setControlsWidth(prev => Math.max(250, Math.min(600, prev - deltaX)));
     };
 
     return (
         <div className={styles.container}>
             <div className={styles.scene}>
                 <Scene>
-                    {/* Fixed World Frame is already in Scene */}
-                    {/* Moving Frame */}
-                    <CoordinateFrame matrix={matrix} label="Moving" />
+                    <CoordinateFrame matrix={matrix} />
                     <TransformationVisualizer matrix={matrix} />
                 </Scene>
             </div>
-            <div className={styles.controls}>
+            <Resizer onResize={handleControlsResize} />
+            <div className={styles.controls} style={{ width: `${controlsWidth}px` }}>
                 <TransformationsControls matrix={matrix} onChange={handleMatrixChange} />
             </div>
         </div>

@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Matrix4, Quaternion, Vector3 } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
+import { Resizer } from '../../components/Resizer';
 import { RotationsControls } from './RotationsControls';
 import styles from './Rotations.module.css';
 
@@ -32,8 +33,14 @@ const RotationAxisVisualizer: React.FC<{ matrix: Matrix4 }> = ({ matrix }) => {
 };
 
 export const RotationsModule: React.FC<RotationsModuleProps> = ({ matrix, setMatrix }) => {
+    const [controlsWidth, setControlsWidth] = useState(350);
+
     const handleMatrixChange = (newMatrix: Matrix4) => {
         setMatrix(newMatrix.clone());
+    };
+
+    const handleControlsResize = (deltaX: number) => {
+        setControlsWidth(prev => Math.max(250, Math.min(600, prev - deltaX)));
     };
 
     return (
@@ -44,7 +51,8 @@ export const RotationsModule: React.FC<RotationsModuleProps> = ({ matrix, setMat
                     <RotationAxisVisualizer matrix={matrix} />
                 </Scene>
             </div>
-            <div className={styles.controls}>
+            <Resizer onResize={handleControlsResize} />
+            <div className={styles.controls} style={{ width: `${controlsWidth}px` }}>
                 <RotationsControls matrix={matrix} onChange={handleMatrixChange} />
             </div>
         </div>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Matrix4 } from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import { Sidebar } from './components/Sidebar';
+import { Resizer } from './components/Resizer';
 import './App.css';
 
 import { RotationsModule } from './modules/Rotations/RotationsModule';
@@ -13,6 +14,9 @@ import type { DHRow } from './utils/robotics';
 
 function App() {
   const [activeModule, setActiveModule] = useState('rotations');
+
+  // Panel width state
+  const [sidebarWidth, setSidebarWidth] = useState(280);
 
   // State for Rotations Module
   const [rotationMatrix, setRotationMatrix] = useState(new Matrix4());
@@ -34,6 +38,10 @@ function App() {
     { id: uuidv4(), a: 0, alpha: 0, d: 0, theta: 0 },
   ]);
   const [robotAxisLength, setRobotAxisLength] = useState(0.3);
+
+  const handleSidebarResize = (deltaX: number) => {
+    setSidebarWidth(prev => Math.max(200, Math.min(500, prev + deltaX)));
+  };
 
   const renderModule = () => {
     switch (activeModule) {
@@ -62,7 +70,10 @@ function App() {
 
   return (
     <div style={{ display: 'flex', width: '100%', height: '100vh' }}>
-      <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+      <div style={{ width: `${sidebarWidth}px`, flexShrink: 0 }}>
+        <Sidebar activeModule={activeModule} setActiveModule={setActiveModule} />
+      </div>
+      <Resizer onResize={handleSidebarResize} />
       <main style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         {renderModule()}
       </main>
