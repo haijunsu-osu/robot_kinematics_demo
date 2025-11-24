@@ -47,6 +47,12 @@ export const RotationsModule: React.FC<RotationsModuleProps> = ({ matrix, setMat
         <div className={styles.container}>
             <div className={styles.scene}>
                 <Scene>
+                    {/* World Frame */}
+                    <CoordinateFrame
+                        scale={1}
+                        label="World"
+                        isGlobal={true}
+                    />
                     <CoordinateFrame matrix={matrix} />
                     <RotationAxisVisualizer matrix={matrix} />
                 </Scene>

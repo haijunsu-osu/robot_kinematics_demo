@@ -59,6 +59,12 @@ export const TransformationsModule: React.FC<TransformationsModuleProps> = ({ ma
         <div className={styles.container}>
             <div className={styles.scene}>
                 <Scene>
+                    {/* World Frame */}
+                    <CoordinateFrame
+                        scale={1}
+                        label="World"
+                        isGlobal={true}
+                    />
                     <CoordinateFrame matrix={matrix} />
                     <TransformationVisualizer matrix={matrix} />
                 </Scene>
