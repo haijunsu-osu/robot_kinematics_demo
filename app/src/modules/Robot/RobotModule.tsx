@@ -18,6 +18,7 @@ interface RobotModuleProps {
 
 export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLength, setAxisLength }) => {
     const [controlsWidth, setControlsWidth] = useState(350);
+    const [showCoordinateSystems, setShowCoordinateSystems] = useState(true);
 
     const frames = useMemo(() => {
         const f: Matrix4[] = [];
@@ -45,7 +46,7 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
             <div className={styles.scene}>
                 <Scene>
                     {/* Frames */}
-                    {frames.map((m, i) => (
+                    {showCoordinateSystems && frames.map((m, i) => (
                         <CoordinateFrame
                             key={i}
                             matrix={m}
@@ -69,6 +70,8 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
                     setRows={setRows}
                     axisLength={axisLength}
                     setAxisLength={setAxisLength}
+                    showCoordinateSystems={showCoordinateSystems}
+                    setShowCoordinateSystems={setShowCoordinateSystems}
                 />
             </div>
         </div>

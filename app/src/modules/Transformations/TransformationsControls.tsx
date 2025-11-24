@@ -18,10 +18,62 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
         theta: 0, d: 0, s: new Vector3(0, 0, 1), c: new Vector3(0, 0, 0)
     });
 
+    // Manual Input States
+    const [posXInput, setPosXInput] = useState('0.00');
+    const [posYInput, setPosYInput] = useState('0.00');
+    const [posZInput, setPosZInput] = useState('0.00');
+
+    const [eulerXInput, setEulerXInput] = useState('0.0');
+    const [eulerYInput, setEulerYInput] = useState('0.0');
+    const [eulerZInput, setEulerZInput] = useState('0.0');
+
+    const [screwThetaInput, setScrewThetaInput] = useState('0.0');
+    const [screwDInput, setScrewDInput] = useState('0.00');
+
+    const [screwSXInput, setScrewSXInput] = useState('0.00');
+    const [screwSYInput, setScrewSYInput] = useState('0.00');
+    const [screwSZInput, setScrewSZInput] = useState('1.00');
+
+    const [screwCXInput, setScrewCXInput] = useState('0.00');
+    const [screwCYInput, setScrewCYInput] = useState('0.00');
+    const [screwCZInput, setScrewCZInput] = useState('0.00');
+
     useEffect(() => {
-        setPosition(new Vector3().setFromMatrixPosition(matrix));
-        setEuler(new Euler().setFromRotationMatrix(matrix));
-        setScrew(getScrewParametersFromMatrix(matrix));
+        const pos = new Vector3().setFromMatrixPosition(matrix);
+        const eul = new Euler().setFromRotationMatrix(matrix);
+        const scr = getScrewParametersFromMatrix(matrix);
+
+        setPosition(pos);
+        setEuler(eul);
+        setScrew(scr);
+
+        // Update input fields only if they differ significantly
+        const updateIfChanged = (current: string, newVal: number, setter: (v: string) => void, precision: number = 2) => {
+            const currentNum = parseFloat(current);
+            if (isNaN(currentNum) || Math.abs(currentNum - newVal) > (1 / Math.pow(10, precision + 1))) {
+                setter(newVal.toFixed(precision));
+            }
+        };
+
+        updateIfChanged(posXInput, pos.x, setPosXInput);
+        updateIfChanged(posYInput, pos.y, setPosYInput);
+        updateIfChanged(posZInput, pos.z, setPosZInput);
+
+        updateIfChanged(eulerXInput, MathUtils.radToDeg(eul.x), setEulerXInput, 1);
+        updateIfChanged(eulerYInput, MathUtils.radToDeg(eul.y), setEulerYInput, 1);
+        updateIfChanged(eulerZInput, MathUtils.radToDeg(eul.z), setEulerZInput, 1);
+
+        updateIfChanged(screwThetaInput, MathUtils.radToDeg(scr.theta), setScrewThetaInput, 1);
+        updateIfChanged(screwDInput, scr.d, setScrewDInput);
+
+        updateIfChanged(screwSXInput, scr.s.x, setScrewSXInput);
+        updateIfChanged(screwSYInput, scr.s.y, setScrewSYInput);
+        updateIfChanged(screwSZInput, scr.s.z, setScrewSZInput);
+
+        updateIfChanged(screwCXInput, scr.c.x, setScrewCXInput);
+        updateIfChanged(screwCYInput, scr.c.y, setScrewCYInput);
+        updateIfChanged(screwCZInput, scr.c.z, setScrewCZInput);
+
     }, [matrix]);
 
     const handlePositionChange = (axis: 'x' | 'y' | 'z', value: number) => {
@@ -40,24 +92,65 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
         onChange(newMatrix);
     };
 
-    const handleScrewChange = (field: keyof ScrewParameters | 'sx' | 'sy' | 'sz' | 'cx' | 'cy' | 'cz', value: number) => {
-        const newScrew = { ...screw, s: screw.s.clone(), c: screw.c.clone() };
+    const handlePositionInputChange = (axis: 'x' | 'y' | 'z', value: string) => {
+        if (axis === 'x') setPosXInput(value);
+        else if (axis === 'y') setPosYInput(value);
+        else setPosZInput(value);
 
-        if (field === 'theta') newScrew.theta = MathUtils.degToRad(value);
-        else if (field === 'd') newScrew.d = value;
-        else if (field === 'sx') newScrew.s.x = value;
-        else if (field === 'sy') newScrew.s.y = value;
-        else if (field === 'sz') newScrew.s.z = value;
-        else if (field === 'cx') newScrew.c.x = value;
-        else if (field === 'cy') newScrew.c.y = value;
-        else if (field === 'cz') newScrew.c.z = value;
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            handlePositionChange(axis, num);
+        }
+    };
 
-        setScrew(newScrew); // Optimistic update
+    const handleEulerInputChange = (axis: 'x' | 'y' | 'z', value: string) => {
+        if (axis === 'x') setEulerXInput(value);
+        else if (axis === 'y') setEulerYInput(value);
+        else setEulerZInput(value);
 
-        // Avoid zero vector for axis
-        if (newScrew.s.lengthSq() > 0.0001) {
-            const m = getMatrixFromScrewParameters(newScrew);
-            onChange(m);
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            handleEulerChange(axis, MathUtils.degToRad(num));
+        }
+    };
+
+    const handleScrewInputChange = (field: string, value: string) => {
+        // Update local state
+        switch (field) {
+            case 'theta': setScrewThetaInput(value); break;
+            case 'd': setScrewDInput(value); break;
+            case 'sx': setScrewSXInput(value); break;
+            case 'sy': setScrewSYInput(value); break;
+            case 'sz': setScrewSZInput(value); break;
+            case 'cx': setScrewCXInput(value); break;
+            case 'cy': setScrewCYInput(value); break;
+            case 'cz': setScrewCZInput(value); break;
+        }
+
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            // Construct new screw params from current inputs + new value
+            const newScrew = { ...screw, s: screw.s.clone(), c: screw.c.clone() };
+
+            // Use the new value for the target field, current state for others
+            // But we must be careful: 'screw' state might be slightly stale compared to inputs if user is typing fast?
+            // Actually, for live updates, we should rely on the inputs if we want consistency, 
+            // but 'screw' state is updated in useEffect from matrix. 
+            // Let's use the 'screw' state as base, which represents the current valid matrix state.
+
+            if (field === 'theta') newScrew.theta = MathUtils.degToRad(num);
+            else if (field === 'd') newScrew.d = num;
+            else if (field === 'sx') newScrew.s.x = num;
+            else if (field === 'sy') newScrew.s.y = num;
+            else if (field === 'sz') newScrew.s.z = num;
+            else if (field === 'cx') newScrew.c.x = num;
+            else if (field === 'cy') newScrew.c.y = num;
+            else if (field === 'cz') newScrew.c.z = num;
+
+            if (newScrew.s.lengthSq() > 0.0001) {
+                const m = getMatrixFromScrewParameters(newScrew);
+                onChange(m);
+            }
         }
     };
 
@@ -111,59 +204,199 @@ export const TransformationsControls: React.FC<TransformationsControlsProps> = (
         <div className={styles.wrapper}>
             <section>
                 <h3>Position</h3>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>X</label>
-                    <input type="number" step="0.1" value={position.x.toFixed(2)} onChange={(e) => handlePositionChange('x', parseFloat(e.target.value))} />
+                    <input
+                        type="number" step="0.1" value={posXInput}
+                        onChange={(e) => handlePositionInputChange('x', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(posXInput) || 0}
+                        onChange={(e) => handlePositionInputChange('x', e.target.value)}
+                    />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Y</label>
-                    <input type="number" step="0.1" value={position.y.toFixed(2)} onChange={(e) => handlePositionChange('y', parseFloat(e.target.value))} />
+                    <input
+                        type="number" step="0.1" value={posYInput}
+                        onChange={(e) => handlePositionInputChange('y', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(posYInput) || 0}
+                        onChange={(e) => handlePositionInputChange('y', e.target.value)}
+                    />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Z</label>
-                    <input type="number" step="0.1" value={position.z.toFixed(2)} onChange={(e) => handlePositionChange('z', parseFloat(e.target.value))} />
+                    <input
+                        type="number" step="0.1" value={posZInput}
+                        onChange={(e) => handlePositionInputChange('z', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(posZInput) || 0}
+                        onChange={(e) => handlePositionInputChange('z', e.target.value)}
+                    />
                 </div>
             </section>
 
             <section>
                 <h3>Rotation (Euler Deg)</h3>
                 <div className={styles.sliderGroup}>
-                    <label>X: {MathUtils.radToDeg(euler.x).toFixed(1)}°</label>
-                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.x)} onChange={(e) => handleEulerChange('x', MathUtils.degToRad(parseFloat(e.target.value)))} />
+                    <label>X (°)</label>
+                    <input
+                        type="number" step="1" value={eulerXInput}
+                        onChange={(e) => handleEulerInputChange('x', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-180} max={180} step={1}
+                        value={parseFloat(eulerXInput) || 0}
+                        onChange={(e) => handleEulerInputChange('x', e.target.value)}
+                    />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Y: {MathUtils.radToDeg(euler.y).toFixed(1)}°</label>
-                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.y)} onChange={(e) => handleEulerChange('y', MathUtils.degToRad(parseFloat(e.target.value)))} />
+                    <label>Y (°)</label>
+                    <input
+                        type="number" step="1" value={eulerYInput}
+                        onChange={(e) => handleEulerInputChange('y', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-180} max={180} step={1}
+                        value={parseFloat(eulerYInput) || 0}
+                        onChange={(e) => handleEulerInputChange('y', e.target.value)}
+                    />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Z: {MathUtils.radToDeg(euler.z).toFixed(1)}°</label>
-                    <input type="range" min={-180} max={180} step={1} value={MathUtils.radToDeg(euler.z)} onChange={(e) => handleEulerChange('z', MathUtils.degToRad(parseFloat(e.target.value)))} />
+                    <label>Z (°)</label>
+                    <input
+                        type="number" step="1" value={eulerZInput}
+                        onChange={(e) => handleEulerInputChange('z', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-180} max={180} step={1}
+                        value={parseFloat(eulerZInput) || 0}
+                        onChange={(e) => handleEulerInputChange('z', e.target.value)}
+                    />
                 </div>
             </section>
 
             <section>
                 <h3>Screw Parameters</h3>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Angle θ (°)</label>
-                    <input type="number" step="1" value={MathUtils.radToDeg(screw.theta).toFixed(1)} onChange={(e) => handleScrewChange('theta', parseFloat(e.target.value))} />
+                    <input
+                        type="number" step="1" value={screwThetaInput}
+                        onChange={(e) => handleScrewInputChange('theta', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-180} max={180} step={1}
+                        value={parseFloat(screwThetaInput) || 0}
+                        onChange={(e) => handleScrewInputChange('theta', e.target.value)}
+                    />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Trans d</label>
-                    <input type="number" step="0.1" value={screw.d.toFixed(2)} onChange={(e) => handleScrewChange('d', parseFloat(e.target.value))} />
+                    <input
+                        type="number" step="0.1" value={screwDInput}
+                        onChange={(e) => handleScrewInputChange('d', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(screwDInput) || 0}
+                        onChange={(e) => handleScrewInputChange('d', e.target.value)}
+                    />
                 </div>
 
                 <h4>Screw Axis Direction (s)</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.x.toFixed(2)} onChange={(e) => handleScrewChange('sx', parseFloat(e.target.value))} placeholder="x" />
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.y.toFixed(2)} onChange={(e) => handleScrewChange('sy', parseFloat(e.target.value))} placeholder="y" />
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.s.z.toFixed(2)} onChange={(e) => handleScrewChange('sz', parseFloat(e.target.value))} placeholder="z" />
+                <div className={styles.sliderGroup}>
+                    <label>X</label>
+                    <input
+                        type="number" step="0.1" value={screwSXInput}
+                        onChange={(e) => handleScrewInputChange('sx', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(screwSXInput) || 0}
+                        onChange={(e) => handleScrewInputChange('sx', e.target.value)}
+                    />
+                </div>
+                <div className={styles.sliderGroup}>
+                    <label>Y</label>
+                    <input
+                        type="number" step="0.1" value={screwSYInput}
+                        onChange={(e) => handleScrewInputChange('sy', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(screwSYInput) || 0}
+                        onChange={(e) => handleScrewInputChange('sy', e.target.value)}
+                    />
+                </div>
+                <div className={styles.sliderGroup}>
+                    <label>Z</label>
+                    <input
+                        type="number" step="0.1" value={screwSZInput}
+                        onChange={(e) => handleScrewInputChange('sz', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(screwSZInput) || 0}
+                        onChange={(e) => handleScrewInputChange('sz', e.target.value)}
+                    />
                 </div>
 
                 <h4>Point on Axis (C)</h4>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.x.toFixed(2)} onChange={(e) => handleScrewChange('cx', parseFloat(e.target.value))} placeholder="x" />
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.y.toFixed(2)} onChange={(e) => handleScrewChange('cy', parseFloat(e.target.value))} placeholder="y" />
-                    <input className={styles.matrixInput} type="number" step="0.1" value={screw.c.z.toFixed(2)} onChange={(e) => handleScrewChange('cz', parseFloat(e.target.value))} placeholder="z" />
+                <div className={styles.sliderGroup}>
+                    <label>X</label>
+                    <input
+                        type="number" step="0.1" value={screwCXInput}
+                        onChange={(e) => handleScrewInputChange('cx', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(screwCXInput) || 0}
+                        onChange={(e) => handleScrewInputChange('cx', e.target.value)}
+                    />
+                </div>
+                <div className={styles.sliderGroup}>
+                    <label>Y</label>
+                    <input
+                        type="number" step="0.1" value={screwCYInput}
+                        onChange={(e) => handleScrewInputChange('cy', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(screwCYInput) || 0}
+                        onChange={(e) => handleScrewInputChange('cy', e.target.value)}
+                    />
+                </div>
+                <div className={styles.sliderGroup}>
+                    <label>Z</label>
+                    <input
+                        type="number" step="0.1" value={screwCZInput}
+                        onChange={(e) => handleScrewInputChange('cz', e.target.value)}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-5} max={5} step={0.01}
+                        value={parseFloat(screwCZInput) || 0}
+                        onChange={(e) => handleScrewInputChange('cz', e.target.value)}
+                    />
                 </div>
             </section>
 

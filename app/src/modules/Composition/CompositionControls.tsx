@@ -52,7 +52,7 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
     return (
         <div className={styles.wrapper}>
             {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '0.5rem' }}>
                 <button
                     style={{
                         flex: 1,
@@ -60,7 +60,7 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
                         color: activeTab === 'input' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                         borderBottom: activeTab === 'input' ? '2px solid var(--accent-primary)' : 'none',
                         borderRadius: 0,
-                        padding: '0.75rem',
+                        padding: '0.5rem',
                         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'
                     }}
                     onClick={() => setActiveTab('input')}
@@ -74,7 +74,7 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
                         color: activeTab === 'computation' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                         borderBottom: activeTab === 'computation' ? '2px solid var(--accent-primary)' : 'none',
                         borderRadius: 0,
-                        padding: '0.75rem',
+                        padding: '0.5rem',
                         display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem'
                     }}
                     onClick={() => setActiveTab('computation')}
@@ -107,7 +107,7 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
 
                     <section>
                         <h3>Transformation Chain</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                             {steps.map((step, index) => (
                                 <div
                                     key={step.id}
@@ -115,7 +115,7 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '0.5rem',
-                                        padding: '0.5rem',
+                                        padding: '0.25rem',
                                         background: selectedId === step.id ? 'rgba(56, 189, 248, 0.1)' : 'var(--bg-secondary)',
                                         border: selectedId === step.id ? '1px solid var(--accent-primary)' : '1px solid transparent',
                                         borderRadius: '4px',
@@ -124,9 +124,9 @@ export const CompositionControls: React.FC<CompositionControlsProps> = ({ steps,
                                     onClick={() => setSelectedId(step.id)}
                                 >
                                     <span style={{ flex: 1, fontWeight: 500 }}>{step.name}</span>
-                                    <button onClick={(e) => { e.stopPropagation(); moveStep(index, -1); }} disabled={index === 0} style={{ padding: '4px' }}><ArrowUp size={14} /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); moveStep(index, 1); }} disabled={index === steps.length - 1} style={{ padding: '4px' }}><ArrowDown size={14} /></button>
-                                    <button onClick={(e) => { e.stopPropagation(); removeStep(step.id); }} style={{ padding: '4px', color: '#ef4444' }}><Trash2 size={14} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); moveStep(index, -1); }} disabled={index === 0} style={{ padding: '2px' }}><ArrowUp size={14} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); moveStep(index, 1); }} disabled={index === steps.length - 1} style={{ padding: '2px' }}><ArrowDown size={14} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); removeStep(step.id); }} style={{ padding: '2px', color: '#ef4444' }}><Trash2 size={14} /></button>
                                 </div>
                             ))}
                             <button onClick={addStep} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>

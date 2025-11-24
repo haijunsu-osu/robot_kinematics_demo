@@ -11,9 +11,11 @@ interface RobotControlsProps {
     setRows: React.Dispatch<React.SetStateAction<DHRow[]>>;
     axisLength: number;
     setAxisLength: (l: number) => void;
+    showCoordinateSystems: boolean;
+    setShowCoordinateSystems: (show: boolean) => void;
 }
 
-export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength }) => {
+export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength, showCoordinateSystems, setShowCoordinateSystems }) => {
     const addRow = () => {
         setRows([...rows, { id: uuidv4(), a: 1, alpha: 0, d: 0, theta: 0 }]);
     };
@@ -103,38 +105,38 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
 
     return (
         <div className={styles.wrapper}>
-            <section>
-                <h3>Visualization Settings</h3>
-                <div className={styles.sliderGroup}>
-                    <label>Axis Length: {axisLength.toFixed(2)}</label>
-                    <input
-                        type="range"
-                        min="0.1"
-                        max="2.0"
-                        step="0.1"
-                        value={axisLength}
-                        onChange={(e) => setAxisLength(parseFloat(e.target.value))}
-                    />
-                </div>
-            </section>
+
 
             <section>
-                <h3>DH Parameters (Standard)</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>
+                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>DH Parameters (Standard)</h3>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={addRow} title="Add Link" style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <Plus size={16} />
+                        </button>
+                        <button onClick={copyDHTable} title="Copy Table" style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <Copy size={16} />
+                        </button>
+                        <button onClick={pasteDHTable} title="Paste Table" style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <ClipboardPaste size={16} />
+                        </button>
+                    </div>
+                </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                         <thead>
                             <tr style={{ textAlign: 'left', color: 'var(--text-secondary)' }}>
-                                <th style={{ padding: '0.5rem' }}>Link</th>
-                                <th style={{ padding: '0.5rem' }}>a</th>
-                                <th style={{ padding: '0.5rem' }}>α (deg)</th>
-                                <th style={{ padding: '0.5rem' }}>d</th>
+                                <th style={{ padding: '0.25rem' }}>Link</th>
+                                <th style={{ padding: '0.25rem' }}>a</th>
+                                <th style={{ padding: '0.25rem' }}>α (deg)</th>
+                                <th style={{ padding: '0.25rem' }}>d</th>
                                 <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {rows.map((row, index) => (
                                 <tr key={row.id} style={{ borderTop: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '0.5rem' }}>{index + 1}</td>
+                                    <td style={{ padding: '0.25rem' }}>{index + 1}</td>
                                     <td style={{ padding: '0.25rem' }}>
                                         <input
                                             type="number"
@@ -172,17 +174,6 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                         </tbody>
                     </table>
                 </div>
-                <button onClick={addRow} style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Plus size={16} /> Add Link
-                </button>
-                <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem' }}>
-                    <button onClick={copyDHTable} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                        <Copy size={14} /> Copy Table
-                    </button>
-                    <button onClick={pasteDHTable} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                        <ClipboardPaste size={14} /> Paste Table
-                    </button>
-                </div>
             </section>
 
             <section>
@@ -203,7 +194,12 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
             </section>
 
             <section>
-                <h3>Forward Kinematics</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.25rem' }}>
+                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Forward Kinematics</h3>
+                    <button onClick={copyEndEffectorPose} title="Copy Pose Matrix" style={{ padding: '4px', background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <Copy size={16} />
+                    </button>
+                </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     End-Effector Pose (relative to Base):
                 </p>
@@ -222,9 +218,30 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                         ));
                     })()}
                 </div>
-                <button onClick={copyEndEffectorPose} style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', justifyContent: 'center' }}>
-                    <Copy size={14} /> Copy Pose Matrix
-                </button>
+            </section>
+
+            <section>
+                <h3>Visualization Settings</h3>
+                <div className={styles.sliderGroup}>
+                    <label>Axis Length: {axisLength.toFixed(2)}</label>
+                    <input
+                        type="range"
+                        min="0.1"
+                        max="2.0"
+                        step="0.1"
+                        value={axisLength}
+                        onChange={(e) => setAxisLength(parseFloat(e.target.value))}
+                    />
+                </div>
+                <div className={styles.row} style={{ marginTop: '0.5rem' }}>
+                    <label style={{ width: 'auto', marginRight: '0.5rem' }}>Show Coordinate Systems</label>
+                    <input
+                        type="checkbox"
+                        checked={showCoordinateSystems}
+                        onChange={(e) => setShowCoordinateSystems(e.target.checked)}
+                        style={{ width: 'auto' }}
+                    />
+                </div>
             </section>
         </div>
     );

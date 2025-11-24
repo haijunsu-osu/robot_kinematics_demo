@@ -21,6 +21,17 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
     const [axis, setAxis] = useState(new Vector3(0, 0, 1));
     const [angleDeg, setAngleDeg] = useState(0);
 
+    // Manual input states for Euler angles (in degrees)
+    const [eulerXInput, setEulerXInput] = useState('0.0');
+    const [eulerYInput, setEulerYInput] = useState('0.0');
+    const [eulerZInput, setEulerZInput] = useState('0.0');
+
+    // Manual input states for Axis-Angle
+    const [angleInput, setAngleInput] = useState('0.0');
+    const [axisXInput, setAxisXInput] = useState('0.00');
+    const [axisYInput, setAxisYInput] = useState('0.00');
+    const [axisZInput, setAxisZInput] = useState('1.00');
+
     const [inputText, setInputText] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [screwParams, setScrewParams] = useState<ScrewParameters | null>(null);
@@ -35,11 +46,25 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
         setAxis(aa.axis);
         setAngleDeg(MathUtils.radToDeg(aa.angle));
 
-        // Clear screw params when matrix changes externally to avoid stale data
-        // or we could auto-compute it. Let's clear it to require explicit "Compute" action as requested
-        // or maybe auto-compute if we want it live. 
-        // User asked for a button, so let's keep it manual or update it if we want.
-        // Let's clear it so the manual input section is distinct.
+        // Update input fields only if they differ significantly from current state
+        // This prevents overwriting user input while typing (e.g. "1." vs "1.0")
+        const updateIfChanged = (current: string, newVal: number, setter: (v: string) => void) => {
+            const currentNum = parseFloat(current);
+            if (isNaN(currentNum) || Math.abs(currentNum - newVal) > 0.01) {
+                setter(newVal.toFixed(1));
+            }
+        };
+
+        updateIfChanged(eulerXInput, MathUtils.radToDeg(e.x), setEulerXInput);
+        updateIfChanged(eulerYInput, MathUtils.radToDeg(e.y), setEulerYInput);
+        updateIfChanged(eulerZInput, MathUtils.radToDeg(e.z), setEulerZInput);
+
+        // For Axis-Angle, we can keep the strict update since it's not live-edited in the same way
+        setAngleInput(MathUtils.radToDeg(aa.angle).toFixed(1));
+        setAxisXInput(aa.axis.x.toFixed(2));
+        setAxisYInput(aa.axis.y.toFixed(2));
+        setAxisZInput(aa.axis.z.toFixed(2));
+
         setScrewParams(null);
     }, [matrix]);
 
@@ -58,25 +83,66 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
         onChange(newMatrix);
     };
 
-    const handleAxisAngleChange = (field: 'x' | 'y' | 'z' | 'angle', value: number) => {
-        let newAxis = axis.clone();
-        let newAngle = angleDeg;
+    const handleEulerInputChange = (axis: 'x' | 'y' | 'z', value: string) => {
+        if (axis === 'x') setEulerXInput(value);
+        else if (axis === 'y') setEulerYInput(value);
+        else setEulerZInput(value);
 
-        if (field === 'angle') {
-            newAngle = value;
-        } else {
-            newAxis[field] = value;
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            handleEulerChange(axis, MathUtils.degToRad(num));
         }
+    };
 
-        // Update local state immediately for responsiveness
-        if (field === 'angle') setAngleDeg(value);
-        else setAxis(newAxis);
+    const applyEulerInput = (axis: 'x' | 'y' | 'z') => {
+        const value = axis === 'x' ? eulerXInput : axis === 'y' ? eulerYInput : eulerZInput;
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            handleEulerChange(axis, MathUtils.degToRad(num));
+        }
+    };
 
-        // Compute new matrix
-        // Avoid zero vector for axis
-        if (newAxis.lengthSq() > 0.0001) {
-            const m = getMatrixFromAxisAngle(newAxis, MathUtils.degToRad(newAngle));
-            onChange(m);
+    const handleAxisAngleInputChange = (field: 'angle' | 'x' | 'y' | 'z', value: string) => {
+        if (field === 'angle') setAngleInput(value);
+        else if (field === 'x') setAxisXInput(value);
+        else if (field === 'y') setAxisYInput(value);
+        else setAxisZInput(value);
+
+        // Live update logic
+        const num = parseFloat(value);
+        if (!isNaN(num)) {
+            // We need all 4 values to compute the matrix
+            // Use the new value for the changed field, and current state for others
+            const angle = field === 'angle' ? num : parseFloat(angleInput);
+            const x = field === 'x' ? num : parseFloat(axisXInput);
+            const y = field === 'y' ? num : parseFloat(axisYInput);
+            const z = field === 'z' ? num : parseFloat(axisZInput);
+
+            if (!isNaN(angle) && !isNaN(x) && !isNaN(y) && !isNaN(z)) {
+                const newAxis = new Vector3(x, y, z);
+                if (newAxis.lengthSq() > 0.0001) {
+                    const m = getMatrixFromAxisAngle(newAxis, MathUtils.degToRad(angle));
+                    onChange(m);
+                }
+            }
+        }
+    };
+
+    const applyAxisAngleInputs = () => {
+        const angle = parseFloat(angleInput);
+        const x = parseFloat(axisXInput);
+        const y = parseFloat(axisYInput);
+        const z = parseFloat(axisZInput);
+
+        if (!isNaN(angle) && !isNaN(x) && !isNaN(y) && !isNaN(z)) {
+            const newAxis = new Vector3(x, y, z);
+            setAxis(newAxis);
+            setAngleDeg(angle);
+
+            if (newAxis.lengthSq() > 0.0001) {
+                const m = getMatrixFromAxisAngle(newAxis, MathUtils.degToRad(angle));
+                onChange(m);
+            }
         }
     };
 
@@ -135,56 +201,133 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
             <section>
                 <h3>Euler Angles (Deg)</h3>
                 <div className={styles.sliderGroup}>
-                    <label>X: {MathUtils.radToDeg(euler.x).toFixed(1)}°</label>
+                    <label>X (°)</label>
+                    <input
+                        type="number" step="1" value={eulerXInput}
+                        onChange={(e) => handleEulerInputChange('x', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyEulerInput('x')}
+                        onBlur={() => applyEulerInput('x')}
+                        className={styles.numberInput}
+                    />
                     <input
                         type="range" min={-180} max={180} step={1}
-                        value={MathUtils.radToDeg(euler.x)} onChange={(e) => handleEulerChange('x', MathUtils.degToRad(parseFloat(e.target.value)))}
+                        value={parseFloat(eulerXInput) || 0}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setEulerXInput(val);
+                            handleEulerChange('x', MathUtils.degToRad(parseFloat(val)));
+                        }}
                     />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Y: {MathUtils.radToDeg(euler.y).toFixed(1)}°</label>
+                    <label>Y (°)</label>
+                    <input
+                        type="number" step="1" value={eulerYInput}
+                        onChange={(e) => handleEulerInputChange('y', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyEulerInput('y')}
+                        onBlur={() => applyEulerInput('y')}
+                        className={styles.numberInput}
+                    />
                     <input
                         type="range" min={-180} max={180} step={1}
-                        value={MathUtils.radToDeg(euler.y)} onChange={(e) => handleEulerChange('y', MathUtils.degToRad(parseFloat(e.target.value)))}
+                        value={parseFloat(eulerYInput) || 0}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setEulerYInput(val);
+                            handleEulerChange('y', MathUtils.degToRad(parseFloat(val)));
+                        }}
                     />
                 </div>
                 <div className={styles.sliderGroup}>
-                    <label>Z: {MathUtils.radToDeg(euler.z).toFixed(1)}°</label>
+                    <label>Z (°)</label>
+                    <input
+                        type="number" step="1" value={eulerZInput}
+                        onChange={(e) => handleEulerInputChange('z', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyEulerInput('z')}
+                        onBlur={() => applyEulerInput('z')}
+                        className={styles.numberInput}
+                    />
                     <input
                         type="range" min={-180} max={180} step={1}
-                        value={MathUtils.radToDeg(euler.z)} onChange={(e) => handleEulerChange('z', MathUtils.degToRad(parseFloat(e.target.value)))}
+                        value={parseFloat(eulerZInput) || 0}
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setEulerZInput(val);
+                            handleEulerChange('z', MathUtils.degToRad(parseFloat(val)));
+                        }}
                     />
                 </div>
             </section>
 
             <section>
-                <h3>Axis-Angle</h3>
-                <div className={styles.inputGroup}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem' }}>
+                    <h3 style={{ margin: 0, border: 'none', padding: 0 }}>Axis-Angle</h3>
+                    <button
+                        className={styles.button}
+                        style={{ width: 'auto', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
+                        onClick={applyAxisAngleInputs}
+                    >
+                        Compute
+                    </button>
+                </div>
+                <div className={styles.sliderGroup}>
                     <label>Angle (°)</label>
                     <input
-                        type="number" step="1" value={angleDeg.toFixed(1)}
-                        onChange={(e) => handleAxisAngleChange('angle', parseFloat(e.target.value))}
+                        type="number" step="1" value={angleInput}
+                        onChange={(e) => handleAxisAngleInputChange('angle', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyAxisAngleInputs()}
+                        onBlur={() => applyAxisAngleInputs()}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-180} max={180} step={1}
+                        value={parseFloat(angleInput) || 0}
+                        onChange={(e) => handleAxisAngleInputChange('angle', e.target.value)}
                     />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Axis X</label>
                     <input
-                        type="number" step="0.1" value={axis.x.toFixed(2)}
-                        onChange={(e) => handleAxisAngleChange('x', parseFloat(e.target.value))}
+                        type="number" step="0.1" value={axisXInput}
+                        onChange={(e) => handleAxisAngleInputChange('x', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyAxisAngleInputs()}
+                        onBlur={() => applyAxisAngleInputs()}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(axisXInput) || 0}
+                        onChange={(e) => handleAxisAngleInputChange('x', e.target.value)}
                     />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Axis Y</label>
                     <input
-                        type="number" step="0.1" value={axis.y.toFixed(2)}
-                        onChange={(e) => handleAxisAngleChange('y', parseFloat(e.target.value))}
+                        type="number" step="0.1" value={axisYInput}
+                        onChange={(e) => handleAxisAngleInputChange('y', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyAxisAngleInputs()}
+                        onBlur={() => applyAxisAngleInputs()}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(axisYInput) || 0}
+                        onChange={(e) => handleAxisAngleInputChange('y', e.target.value)}
                     />
                 </div>
-                <div className={styles.inputGroup}>
+                <div className={styles.sliderGroup}>
                     <label>Axis Z</label>
                     <input
-                        type="number" step="0.1" value={axis.z.toFixed(2)}
-                        onChange={(e) => handleAxisAngleChange('z', parseFloat(e.target.value))}
+                        type="number" step="0.1" value={axisZInput}
+                        onChange={(e) => handleAxisAngleInputChange('z', e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && applyAxisAngleInputs()}
+                        onBlur={() => applyAxisAngleInputs()}
+                        className={styles.numberInput}
+                    />
+                    <input
+                        type="range" min={-1} max={1} step={0.01}
+                        value={parseFloat(axisZInput) || 0}
+                        onChange={(e) => handleAxisAngleInputChange('z', e.target.value)}
                     />
                 </div>
             </section>
