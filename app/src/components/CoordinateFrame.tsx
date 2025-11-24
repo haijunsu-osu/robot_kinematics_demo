@@ -9,11 +9,11 @@ interface FrameProps {
     quaternion?: Quaternion;
     scale?: number;
     label?: string;
+    isGlobal?: boolean;
 }
 
-const Axis: React.FC<{ color: string; direction: [number, number, number]; label: string }> = ({ color, direction, label }) => {
+const Axis: React.FC<{ color: string; direction: [number, number, number]; label: string; radius?: number; opacity?: number }> = ({ color, direction, label, radius = 0.02, opacity = 1 }) => {
     const length = 1;
-    const radius = 0.02;
 
     let rotation: [number, number, number] = [0, 0, 0];
     if (direction[0] === 1) rotation = [0, 0, -Math.PI / 2];
@@ -23,11 +23,11 @@ const Axis: React.FC<{ color: string; direction: [number, number, number]; label
         <group rotation={new Euler(...rotation)}>
             <mesh position={[0, length / 2, 0]}>
                 <cylinderGeometry args={[radius, radius, length, 16]} />
-                <meshStandardMaterial color={color} />
+                <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
             </mesh>
             <mesh position={[0, length, 0]}>
                 <coneGeometry args={[radius * 3, radius * 6, 16]} />
-                <meshStandardMaterial color={color} />
+                <meshStandardMaterial color={color} transparent={opacity < 1} opacity={opacity} />
             </mesh>
             <Text
                 position={[0, length + 0.2, 0]}
@@ -35,6 +35,7 @@ const Axis: React.FC<{ color: string; direction: [number, number, number]; label
                 color={color}
                 anchorX="center"
                 anchorY="middle"
+                fillOpacity={opacity}
             >
                 {label}
             </Text>
@@ -42,13 +43,15 @@ const Axis: React.FC<{ color: string; direction: [number, number, number]; label
     );
 };
 
-export const CoordinateFrame: React.FC<FrameProps> = ({
+export const CoordinateFrame: React.FC<FrameProps & { showAxes?: [boolean, boolean, boolean] }> = ({
     matrix,
     position = [0, 0, 0],
     rotation = [0, 0, 0],
     quaternion,
     scale = 1,
-    label
+    label,
+    showAxes = [true, true, true],
+    isGlobal = false
 }) => {
 
     const finalMatrix = useMemo(() => {
@@ -69,9 +72,9 @@ export const CoordinateFrame: React.FC<FrameProps> = ({
 
     return (
         <group matrixAutoUpdate={false} matrix={finalMatrix}>
-            <Axis color="#ef4444" direction={[1, 0, 0]} label="X" />
-            <Axis color="#22c55e" direction={[0, 1, 0]} label="Y" />
-            <Axis color="#3b82f6" direction={[0, 0, 1]} label="Z" />
+            {showAxes[0] && <Axis color="#ef4444" direction={[1, 0, 0]} label="X" radius={isGlobal ? 0.01 : 0.02} opacity={isGlobal ? 0.5 : 1} />}
+            {showAxes[1] && <Axis color="#22c55e" direction={[0, 1, 0]} label="Y" radius={isGlobal ? 0.01 : 0.02} opacity={isGlobal ? 0.5 : 1} />}
+            {showAxes[2] && <Axis color="#3b82f6" direction={[0, 0, 1]} label="Z" radius={isGlobal ? 0.01 : 0.02} opacity={isGlobal ? 0.5 : 1} />}
             {label && (
                 <Text
                     position={[0, 0, 0]}

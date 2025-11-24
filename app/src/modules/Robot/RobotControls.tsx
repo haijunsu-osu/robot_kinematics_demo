@@ -11,11 +11,11 @@ interface RobotControlsProps {
     setRows: React.Dispatch<React.SetStateAction<DHRow[]>>;
     axisLength: number;
     setAxisLength: (l: number) => void;
-    showCoordinateSystems: boolean;
-    setShowCoordinateSystems: (show: boolean) => void;
+    visibleFrames: Set<number>;
+    toggleFrameVisibility: (index: number) => void;
 }
 
-export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength, showCoordinateSystems, setShowCoordinateSystems }) => {
+export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength, visibleFrames, toggleFrameVisibility }) => {
     const addRow = () => {
         setRows([...rows, { id: uuidv4(), a: 1, alpha: 0, d: 0, theta: 0 }]);
     };
@@ -180,7 +180,14 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                 <h3>Joint Angles (Degrees)</h3>
                 {rows.map((row, index) => (
                     <div key={row.id} className={styles.sliderGroup}>
-                        <label>J{index + 1}: {(row.theta * 180 / Math.PI).toFixed(1)}°</label>
+                        <label style={{ minWidth: '30px' }}>J{index + 1}</label>
+                        <input
+                            type="number"
+                            value={(row.theta * 180 / Math.PI).toFixed(1)}
+                            onChange={(e) => updateRow(row.id, 'theta', parseFloat(e.target.value) * Math.PI / 180)}
+                            className={styles.numberInput}
+                            style={{ width: '60px', marginRight: '0.5rem' }}
+                        />
                         <input
                             type="range"
                             min={-180}
@@ -233,14 +240,28 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                         onChange={(e) => setAxisLength(parseFloat(e.target.value))}
                     />
                 </div>
-                <div className={styles.row} style={{ marginTop: '0.5rem' }}>
-                    <label style={{ width: 'auto', marginRight: '0.5rem' }}>Show Coordinate Systems</label>
-                    <input
-                        type="checkbox"
-                        checked={showCoordinateSystems}
-                        onChange={(e) => setShowCoordinateSystems(e.target.checked)}
-                        style={{ width: 'auto' }}
-                    />
+                <div className={styles.row} style={{ marginTop: '0.5rem', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <label style={{ width: 'auto', marginBottom: '0.25rem' }}>Visible Frames:</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: 'auto', fontWeight: 'normal', fontSize: '0.8rem' }}>
+                            <input
+                                type="checkbox"
+                                checked={visibleFrames.has(0)}
+                                onChange={() => toggleFrameVisibility(0)}
+                            />
+                            Base
+                        </label>
+                        {rows.map((_, i) => (
+                            <label key={i + 1} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: 'auto', fontWeight: 'normal', fontSize: '0.8rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={visibleFrames.has(i + 1)}
+                                    onChange={() => toggleFrameVisibility(i + 1)}
+                                />
+                                J{i + 1}
+                            </label>
+                        ))}
+                    </div>
                 </div>
             </section>
         </div>
