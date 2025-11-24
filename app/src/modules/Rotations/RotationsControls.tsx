@@ -17,10 +17,6 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
     const [euler, setEuler] = useState(new Euler());
     const [quaternion, setQuaternion] = useState(new Quaternion());
 
-    // Axis-Angle State
-    const [axis, setAxis] = useState(new Vector3(0, 0, 1));
-    const [angleDeg, setAngleDeg] = useState(0);
-
     // Manual input states for Euler angles (in degrees)
     const [eulerXInput, setEulerXInput] = useState('0.0');
     const [eulerYInput, setEulerYInput] = useState('0.0');
@@ -43,8 +39,6 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
         setQuaternion(q);
 
         const aa = getAxisAngleFromMatrix(matrix);
-        setAxis(aa.axis);
-        setAngleDeg(MathUtils.radToDeg(aa.angle));
 
         // Update input fields only if they differ significantly from current state
         // This prevents overwriting user input while typing (e.g. "1." vs "1.0")
@@ -136,8 +130,6 @@ export const RotationsControls: React.FC<RotationsControlsProps> = ({ matrix, on
 
         if (!isNaN(angle) && !isNaN(x) && !isNaN(y) && !isNaN(z)) {
             const newAxis = new Vector3(x, y, z);
-            setAxis(newAxis);
-            setAngleDeg(angle);
 
             if (newAxis.lengthSq() > 0.0001) {
                 const m = getMatrixFromAxisAngle(newAxis, MathUtils.degToRad(angle));
