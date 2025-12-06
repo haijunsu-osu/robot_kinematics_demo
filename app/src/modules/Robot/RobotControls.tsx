@@ -1,7 +1,7 @@
 import React from 'react';
 import { calculateDHMatrix } from '../../utils/robotics';
 import type { DHRow } from '../../utils/robotics';
-import { Matrix4 } from 'three';
+import { Matrix4, Euler } from 'three';
 import { v4 as uuidv4 } from 'uuid';
 import styles from '../Rotations/RotationsControls.module.css';
 import { Plus, Trash2, Copy, ClipboardPaste } from 'lucide-react';
@@ -13,9 +13,79 @@ interface RobotControlsProps {
     setAxisLength: (l: number) => void;
     visibleFrames: Set<number>;
     toggleFrameVisibility: (index: number) => void;
+    toolFrame: {
+        enabled: boolean;
+        x: number;
+        y: number;
+        z: number;
+        roll: number;
+        pitch: number;
+        yaw: number;
+    };
+    setToolFrame: React.Dispatch<React.SetStateAction<{
+        enabled: boolean;
+        x: number;
+        y: number;
+        z: number;
+        roll: number;
+        pitch: number;
+        yaw: number;
+    }>>;
 }
 
-export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength, visibleFrames, toggleFrameVisibility }) => {
+interface SmartInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
+    value: number;
+    onValueChange: (val: number) => void;
+    transformIn?: (val: number) => number;
+    transformOut?: (val: number) => number;
+    precision?: number;
+}
+
+const SmartInput: React.FC<SmartInputProps> = ({
+    value,
+    onValueChange,
+    transformIn = (v: number) => v,
+    transformOut = (v: number) => v,
+    precision = 2,
+    ...props
+}) => {
+    const [localValue, setLocalValue] = React.useState<string>('');
+    const [isFocused, setIsFocused] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!isFocused) {
+            const v = transformIn(value);
+            const formatted = isNaN(v) ? '' : v.toFixed(precision);
+            // Strip trailing zeros if it contains a decimal point
+            const stripped = formatted.includes('.') ? formatted.replace(/\.?0+$/, '') : formatted;
+            setLocalValue(stripped);
+        }
+    }, [value, isFocused, transformIn, precision]);
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVal = e.target.value;
+        setLocalValue(newVal);
+
+        if (newVal === '' || newVal === '-') return;
+
+        const parsed = parseFloat(newVal);
+        if (!isNaN(parsed)) {
+            onValueChange(transformOut(parsed));
+        }
+    };
+
+    return (
+        <input
+            {...props}
+            value={localValue}
+            onChange={handleChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+        />
+    );
+};
+
+export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axisLength, setAxisLength, visibleFrames, toggleFrameVisibility, toolFrame, setToolFrame }) => {
     const addRow = () => {
         setRows([...rows, { id: uuidv4(), a: 1, alpha: 0, d: 0, theta: 0 }]);
     };
@@ -26,6 +96,10 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
 
     const updateRow = (id: string, field: keyof DHRow, value: number) => {
         setRows(rows.map(r => r.id === id ? { ...r, [field]: value } : r));
+    };
+
+    const updateToolFrame = (field: keyof typeof toolFrame, value: number | boolean) => {
+        setToolFrame(prev => ({ ...prev, [field]: value }));
     };
 
     const copyDHTable = async () => {
@@ -84,6 +158,19 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
             current = current.multiply(transform);
         });
 
+        if (toolFrame.enabled) {
+            const toolMatrix = new Matrix4();
+            const euler = new Euler(
+                toolFrame.roll * Math.PI / 180,
+                toolFrame.pitch * Math.PI / 180,
+                toolFrame.yaw * Math.PI / 180,
+                'XYZ'
+            );
+            toolMatrix.makeRotationFromEuler(euler);
+            toolMatrix.setPosition(toolFrame.x, toolFrame.y, toolFrame.z);
+            current = current.multiply(toolMatrix);
+        }
+
         // Format as row-major 4x4 matrix
         const elements = current.elements;
         const matrix4x4 = [
@@ -138,29 +225,34 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                 <tr key={row.id} style={{ borderTop: '1px solid var(--border-color)' }}>
                                     <td style={{ padding: '0.25rem' }}>{index + 1}</td>
                                     <td style={{ padding: '0.25rem' }}>
-                                        <input
+                                        <SmartInput
                                             type="number"
                                             step="0.1"
                                             value={row.a}
-                                            onChange={(e) => updateRow(row.id, 'a', parseFloat(e.target.value))}
+                                            onValueChange={(val) => updateRow(row.id, 'a', val)}
+                                            precision={3}
                                             style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
                                     <td style={{ padding: '0.25rem' }}>
-                                        <input
+                                        <SmartInput
                                             type="number"
                                             step="1"
-                                            value={(row.alpha * 180 / Math.PI).toFixed(1)}
-                                            onChange={(e) => updateRow(row.id, 'alpha', parseFloat(e.target.value) * Math.PI / 180)}
+                                            value={row.alpha}
+                                            onValueChange={(val) => updateRow(row.id, 'alpha', val)}
+                                            transformIn={(v) => v * 180 / Math.PI}
+                                            transformOut={(v) => v * Math.PI / 180}
+                                            precision={1}
                                             style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
                                     <td style={{ padding: '0.25rem' }}>
-                                        <input
+                                        <SmartInput
                                             type="number"
                                             step="0.1"
                                             value={row.d}
-                                            onChange={(e) => updateRow(row.id, 'd', parseFloat(e.target.value))}
+                                            onValueChange={(val) => updateRow(row.id, 'd', val)}
+                                            precision={3}
                                             style={{ width: '60px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-primary)', borderRadius: '4px' }}
                                         />
                                     </td>
@@ -177,14 +269,72 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
             </section>
 
             <section>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                    <h3>Tool Frame</h3>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem', cursor: 'pointer' }}>
+                        <input
+                            type="checkbox"
+                            checked={toolFrame.enabled}
+                            onChange={(e) => updateToolFrame('enabled', e.target.checked)}
+                        />
+                        Enable
+                    </label>
+                </div>
+
+                {toolFrame.enabled && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Translation (x, y, z)</label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {(['x', 'y', 'z'] as const).map(axis => (
+                                    <div key={axis} style={{ flex: 1 }}>
+                                        <SmartInput
+                                            type="number"
+                                            value={toolFrame[axis]}
+                                            onValueChange={(val) => updateToolFrame(axis, val)}
+                                            step={0.1}
+                                            precision={3}
+                                            style={{ width: '100%', padding: '4px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                                            placeholder={axis.toUpperCase()}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>Rotation (deg) (R, P, Y)</label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                {(['roll', 'pitch', 'yaw'] as const).map((axis, i) => (
+                                    <div key={axis} style={{ flex: 1 }}>
+                                        <SmartInput
+                                            type="number"
+                                            value={toolFrame[axis]}
+                                            onValueChange={(val) => updateToolFrame(axis, val)}
+                                            step={1}
+                                            precision={1}
+                                            style={{ width: '100%', padding: '4px', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '4px' }}
+                                            placeholder={['R', 'P', 'Y'][i]}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </section>
+
+            <section>
                 <h3>Joint Angles (Degrees)</h3>
                 {rows.map((row, index) => (
                     <div key={row.id} className={styles.sliderGroup}>
                         <label style={{ minWidth: '30px' }}>J{index + 1}</label>
-                        <input
+                        <SmartInput
                             type="number"
-                            value={(row.theta * 180 / Math.PI).toFixed(1)}
-                            onChange={(e) => updateRow(row.id, 'theta', parseFloat(e.target.value) * Math.PI / 180)}
+                            value={row.theta}
+                            onValueChange={(val) => updateRow(row.id, 'theta', val)}
+                            transformIn={(v) => v * 180 / Math.PI}
+                            transformOut={(v) => v * Math.PI / 180}
+                            precision={1}
                             className={styles.numberInput}
                             style={{ width: '60px', marginRight: '0.5rem' }}
                         />
@@ -217,6 +367,19 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                             const transform = calculateDHMatrix(row.a, row.alpha, row.d, row.theta);
                             current = current.multiply(transform);
                         });
+
+                        if (toolFrame.enabled) {
+                            const toolMatrix = new Matrix4();
+                            const euler = new Euler(
+                                toolFrame.roll * Math.PI / 180,
+                                toolFrame.pitch * Math.PI / 180,
+                                toolFrame.yaw * Math.PI / 180,
+                                'XYZ'
+                            );
+                            toolMatrix.makeRotationFromEuler(euler);
+                            toolMatrix.setPosition(toolFrame.x, toolFrame.y, toolFrame.z);
+                            current = current.multiply(toolMatrix);
+                        }
                         // Display in row-major order (3x4)
                         return [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14].map((idx) => (
                             <div key={idx} className={styles.matrixInput} style={{ background: 'var(--bg-primary)', border: 'none', padding: '0.25rem', fontSize: '0.8rem' }}>
@@ -261,6 +424,16 @@ export const RobotControls: React.FC<RobotControlsProps> = ({ rows, setRows, axi
                                 J{i + 1}
                             </label>
                         ))}
+                        {toolFrame.enabled && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', width: 'auto', fontWeight: 'normal', fontSize: '0.8rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={visibleFrames.has(rows.length + 1)}
+                                    onChange={() => toggleFrameVisibility(rows.length + 1)}
+                                />
+                                Tool
+                            </label>
+                        )}
                     </div>
                 </div>
             </section>

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Matrix4, Vector3, Quaternion } from 'three';
+import { Matrix4, Vector3, Quaternion, Euler } from 'three';
 import { Scene } from '../../components/Scene';
 import { CoordinateFrame } from '../../components/CoordinateFrame';
 import { Resizer } from '../../components/Resizer';
@@ -13,6 +13,16 @@ interface RobotModuleProps {
     setRows: React.Dispatch<React.SetStateAction<DHRow[]>>;
     axisLength: number;
     setAxisLength: (l: number) => void;
+}
+
+export interface ToolFrameState {
+    enabled: boolean;
+    x: number;
+    y: number;
+    z: number;
+    roll: number;
+    pitch: number;
+    yaw: number;
 }
 
 interface CylinderLinkProps {
@@ -52,6 +62,23 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
         return initial;
     });
 
+    const [toolFrame, setToolFrame] = useState<ToolFrameState>({
+        enabled: false,
+        x: 0, y: 0, z: 0,
+        roll: 0, pitch: 0, yaw: 0
+    });
+
+    // Auto-show tool frame when enabled
+    React.useEffect(() => {
+        if (toolFrame.enabled) {
+            setVisibleFrames(prev => {
+                const next = new Set(prev);
+                next.add(rows.length + 1);
+                return next;
+            });
+        }
+    }, [toolFrame.enabled, rows.length]);
+
     const frames = useMemo(() => {
         const f: Matrix4[] = [];
         let current = new Matrix4();
@@ -62,8 +89,24 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
             current = current.clone().multiply(transform);
             f.push(current.clone());
         });
+
+        if (toolFrame.enabled) {
+            const toolMatrix = new Matrix4();
+            const euler = new Euler(
+                toolFrame.roll * Math.PI / 180,
+                toolFrame.pitch * Math.PI / 180,
+                toolFrame.yaw * Math.PI / 180,
+                'XYZ'
+            );
+            toolMatrix.makeRotationFromEuler(euler);
+            toolMatrix.setPosition(toolFrame.x, toolFrame.y, toolFrame.z);
+
+            current = current.clone().multiply(toolMatrix);
+            f.push(current.clone());
+        }
+
         return f;
-    }, [rows]);
+    }, [rows, toolFrame]);
 
     const handleControlsResize = (deltaX: number) => {
         setControlsWidth(prev => Math.max(250, Math.min(600, prev - deltaX)));
@@ -93,15 +136,22 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
                     />
 
                     {/* Robot Frames */}
-                    {frames.map((m, i) => (
-                        <CoordinateFrame
-                            key={i}
-                            matrix={m}
-                            scale={axisLength}
-                            label={i === 0 ? "Base" : `J${i}`}
-                            showAxes={visibleFrames.has(i) ? [true, true, true] : [false, false, true]}
-                        />
-                    ))}
+                    {frames.map((m, i) => {
+                        let label = "";
+                        if (i === 0) label = "Base";
+                        else if (toolFrame.enabled && i === frames.length - 1) label = "Tool";
+                        else label = `J${i}`;
+
+                        return (
+                            <CoordinateFrame
+                                key={i}
+                                matrix={m}
+                                scale={axisLength}
+                                label={label}
+                                showAxes={visibleFrames.has(i) ? [true, true, true] : [false, false, true]}
+                            />
+                        );
+                    })}
 
                     {/* Links (Cylinders) */}
                     {rows.map((row, i) => {
@@ -135,6 +185,16 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
                             </group>
                         );
                     })}
+
+                    {/* Tool Link */}
+                    {toolFrame.enabled && (
+                        <CylinderLink
+                            start={new Vector3().setFromMatrixPosition(frames[frames.length - 2])}
+                            end={new Vector3().setFromMatrixPosition(frames[frames.length - 1])}
+                            color="#a855f7" // Purple
+                            radius={axisLength * 0.03}
+                        />
+                    )}
                 </Scene>
             </div>
             <Resizer onResize={handleControlsResize} />
@@ -146,6 +206,8 @@ export const RobotModule: React.FC<RobotModuleProps> = ({ rows, setRows, axisLen
                     setAxisLength={setAxisLength}
                     visibleFrames={visibleFrames}
                     toggleFrameVisibility={toggleFrameVisibility}
+                    toolFrame={toolFrame}
+                    setToolFrame={setToolFrame}
                 />
             </div>
         </div>
